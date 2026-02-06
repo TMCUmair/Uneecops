@@ -1,0 +1,7 @@
+%dw 2.0
+
+type auto_f55fa3a8_9fc0_4cd9_a787_165c5d1d6182_Output_Variables_sfDetails = {|
+  object: String, 
+  externalId: String
+|}
+

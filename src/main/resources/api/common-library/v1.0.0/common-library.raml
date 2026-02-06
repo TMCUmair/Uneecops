@@ -1,0 +1,8 @@
+#%RAML 1.0 Library
+
+traits:
+  errorTrait: !include traits/errorTrait.raml
+
+securitySchemes:
+  # oauth_2_0: !include securitySchemes/oauth20.raml
+  x-client-id-secret: !include securitySchemes/clientIdSecretSecurityScheme.raml

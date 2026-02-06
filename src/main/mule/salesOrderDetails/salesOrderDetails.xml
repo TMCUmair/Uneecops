@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="salesOrderDetailsSub_Flow" doc:id="30c54fda-b0dc-4285-923a-ed40687cb12e" >
+		<json-logger:logger doc:name="DEBUG: Sales Order details to Entry" doc:id="6e49bb3e-93a3-4216-b418-0faae05a54ec" config-ref="JSON_Logger_Config" message="Sales Order details Sub Flow Started">
+			<json-logger:content><![CDATA[#[output application/json ---
+{
+    request: payload
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<ee:transform doc:name="Payload, sfDetails" doc:id="a7470f1f-5e1e-49eb-b039-50d01352f960" >
+			<ee:message >
+				<ee:set-payload resource="dwl/salesOrderDetails.dwl" />
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sfDetails" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	object: Mule::p('sfdc.salesOrderDetails.object'),
+	externalId: Mule::p('sfdc.salesOrderDetails.externalId')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Upsert sales Order details Data" doc:id="3c3f9393-d44f-44ce-9e2a-9b6d10392b07" name="upsert-data-to-salesforce" />
+		<choice doc:name="Choice" doc:id="6a7a4454-00a7-4501-95b4-8b04ff0a5612" >
+			<when expression="#[payload.successful == true]" >
+				<ee:transform doc:name="Transform Message" doc:id="7b9dc60b-f4ac-42fa-a38b-a462d8f4afca" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  isSuccess: payload.successful,
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  traceId: correlationId,
+  timestamp: now() as DateTime,
+  message: "Success",
+  sfResponse: write(payload,"application/json")
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="fe8dd306-5dc0-4ac4-9636-eb535cef65fe" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  isSuccess: payload.successful,
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  traceId: correlationId,
+  timestamp: now() as DateTime,
+  message: "Failed",
+  sfResponse: write({
+    "items":
+    payload.items map ((item) -> 
+    item.exception - "stackTrace")
+},"application/json")
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<json-logger:logger doc:name="DEBUG: Sales Order details to Exit" doc:id="940dc567-62f3-42c6-ace8-01a99e450138" config-ref="JSON_Logger_Config" message="Sales Order details Sub Flow Completed" >
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+    request: payload
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+</mule>

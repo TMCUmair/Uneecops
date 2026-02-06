@@ -1,0 +1,103 @@
+#%RAML 1.0
+title: mqf-api-integration
+
+protocols:
+  - http
+  - https
+
+baseUri: https://{baseurl}/mqf/{projectname}/v1/*
+
+
+uses:
+  common-library: common-library/v1.0.0/common-library.raml
+  
+
+securedBy: common-library.x-client-id-secret
+
+
+types:
+  responseType : !include response.raml
+
+/customerMaster:
+  description: "To update or create Customer Master records in SF"
+  post:
+    is: [common-library.errorTrait]
+    body:
+      application/json:
+        type: array
+        items: !include requests/customerMasterRequest.raml
+        example: !include examples/customerMasterExample.raml
+    responses:
+      200:
+        body:
+          application/json:
+            type: responseType
+            example: !include examples/responseExample.raml
+
+/customerShipToMaster:
+  description: "To update or create Customer Ship records in SF"
+  post:
+    is: [common-library.errorTrait]
+    body:
+      application/json:
+        type: array
+        items: !include requests/customerShipToRequest.raml
+        example: !include examples/customerShipToExample.raml
+    responses:
+      200:
+        body:
+          application/json:
+            type: responseType
+            example: !include examples/responseExample.raml
+
+/products:
+  description: "To update or create Product Master records in SF"
+  post:
+    is: [common-library.errorTrait]
+    body:
+      application/json:
+        type: array
+        items: !include requests/productMasterRequest.raml
+        example: !include examples/productMasterExample.raml
+          
+    responses:
+      200:
+        body:
+          application/json:
+            type: responseType
+            example: !include examples/responseExample.raml
+
+/salesOrderHeader:
+  description: "To update or create Sales Order (Header) records in SF"
+  post:
+    is: [common-library.errorTrait]
+    body:
+      application/json:
+        type: array
+        items: !include requests/salesOrderHeaderRequest.raml
+        example: !include examples/salesOrderHeaderExample.raml
+          
+    responses:
+      200:
+        body:
+          application/json:
+            type: responseType
+            example: !include examples/responseExample.raml
+
+/salesOrderDetails:
+  description: "To update or create Sales Order (Details) records in SF"
+  post:
+    is: [common-library.errorTrait]
+    body:
+      application/json:
+        type: array
+        items: !include requests/salesOrderDetailsRequest.raml
+        example: !include examples/salesOrderDetailsExample.raml
+          
+    responses:
+      200:
+        body:
+          application/json:
+            type: responseType
+            example: !include examples/responseExample.raml
+

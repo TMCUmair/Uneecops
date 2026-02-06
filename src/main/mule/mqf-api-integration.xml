@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+    <flow name="mqf-api-integration-main">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="mqf-api-integration-config" />
+        <error-handler ref="global-error-handler" />
+    </flow>
+    <flow name="mqf-api-integration-console">
+        <http:listener config-ref="HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="mqf-api-integration-config" />
+        <error-handler ref="global-error-handler" />
+    </flow>
+    <flow name="post:\customerMaster:application\json:mqf-api-integration-config">
+        <tracing:with-correlation-id doc:name="With CorrelationID" doc:id="42f5cb9a-e53d-476a-a69e-ecdd61519343" correlationId="#[correlationId]">
+            <ee:transform doc:name="vars:flowVars" doc:id="c82b8548-04bd-4a74-983a-1df2c9441be7">
+                <ee:message />
+                <ee:variables>
+                    <ee:set-variable variableName="flowVars"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"flowName":'CustomerMaster',
+	"correlationId":correlationId
+}]]></ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+            <flow-ref doc:name="customer-masterSub_Flow" doc:id="fe629f60-209d-41c8-b7d5-3429f83477e4" name="customer-masterSub_Flow" />
+        </tracing:with-correlation-id>
+    </flow>
+    <flow name="post:\customerShipToMaster:application\json:mqf-api-integration-config">
+        <tracing:with-correlation-id doc:name="With CorrelationID" doc:id="61dfbff8-6a33-4084-aa0a-f2d98b767149" correlationId="#[correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="08a05b92-3a00-4a15-81d0-e549848484ac">
+            <ee:message>
+            </ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="flowVars" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"flowName":'CustomerShipToMaster',
+	"correlationId":correlationId
+}]]></ee:set-variable>
+				</ee:variables>
+        </ee:transform>
+			<flow-ref doc:name="customer-Ship-toSub_Flow" doc:id="1c72a443-8f1c-4a89-aea1-d910337d0bc2" name="customer-Ship-toSub_Flow"/>
+		</tracing:with-correlation-id>
+    </flow>
+    <flow name="post:\products:application\json:mqf-api-integration-config">
+        <tracing:with-correlation-id doc:name="With CorrelationID" doc:id="c4e5c338-dd86-44eb-9732-cc441aabc2f8" correlationId="#[correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="2e05b903-e9b9-4468-ad80-f6da6bbf013b">
+            <ee:message>
+            </ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="flowVars" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"flowName":'Product',
+	"correlationId":correlationId
+}]]></ee:set-variable>
+				</ee:variables>
+        </ee:transform>
+			<flow-ref doc:name="productSub_Flow" doc:id="0279903a-ef18-4ff2-b106-26f3eb6f4840" name="productSub_Flow"/>
+		</tracing:with-correlation-id>
+    </flow>
+    <flow name="post:\salesOrderDetails:application\json:mqf-api-integration-config">
+        <tracing:with-correlation-id doc:name="With CorrelationID" doc:id="8e6fcab0-4aea-4d47-9b35-2fc3b650084e" correlationId="#[correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="4be93e33-4a4f-4592-b8c4-e2043ebfbb67">
+            <ee:message>
+            </ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="flowVars" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"flowName":'SalesOrderDetails',
+	"correlationId":correlationId
+}]]></ee:set-variable>
+				</ee:variables>
+        </ee:transform>
+			<flow-ref doc:name="salesOrderDetailsSub_Flow" doc:id="417c563f-9104-43e3-af15-98d65dab2232" name="salesOrderDetailsSub_Flow"/>
+		</tracing:with-correlation-id>
+    </flow>
+    <flow name="post:\salesOrderHeader:application\json:mqf-api-integration-config">
+        <tracing:with-correlation-id doc:name="With CorrelationID" doc:id="62d7bbc8-9d9d-4638-8bea-538653a8a509" correlationId="#[correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="5e0fa9ba-85fb-43b2-82ba-011473b54791">
+            <ee:message>
+            </ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="flowVars" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"flowName":'SalesOrderHeader',
+	"correlationId":correlationId
+}]]></ee:set-variable>
+				</ee:variables>
+        </ee:transform>
+			<flow-ref doc:name="salesOrderSub_Flow" doc:id="c536e265-e12d-49f9-91ab-23dddaa08a35" name="salesOrderSub_Flow"/>
+		</tracing:with-correlation-id>
+    </flow>
+</mule>

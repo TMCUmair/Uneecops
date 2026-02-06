@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+	<flow name="customer-masterFlow" doc:id="767d25ad-e104-4635-a5db-22e966c7f841" initialState="${flowState.customerMaster}">
+		<sftp:listener doc:name="On New or Updated File" doc:id="591e1c05-b783-4eb5-8be6-9db3472e876f" directory="${sftp.directory.customermaster.input}" config-ref="SFTP_Config" recursive="false">
+			<scheduling-strategy >
+				<cron expression="${sftp.schedulerExpresssion.customermaster}" timeZone="America/New_York" />
+			</scheduling-strategy>
+		</sftp:listener>
+		<set-variable value="#[output application/json&#10;---&#10;payload]" doc:name="jsonData" doc:id="fba968ff-9129-416e-adca-4c4a419c8cac" variableName="jsonData" />
+		<tracing:with-correlation-id doc:name="With CorrelationID" doc:id="ebc5a84e-e105-48be-a7e1-9c5aff171e2b" correlationId="#[vars.flowVars.initialVars.originalCorrelationId default correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="2c903ae3-0116-420a-9e7a-eb39cb205006">
+				<ee:message />
+				<ee:variables>
+					<ee:set-variable variableName="flowVars"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"sftp": {
+		"fileName": message.attributes.name default "file-name-not-found",
+		"inputPath": Mule::p('sftp.directory.customermaster.input'),
+		"outputPath": Mule::p('sftp.directory.customermaster.output'),
+		"failedPath": Mule::p('sftp.directory.customermaster.failed')
+	},
+	"email": {
+		"subject" : "Customer Master SFTP to SF Sync Failed - " ++ message.attributes.name default "file-name-not-found"
+	},
+	"initialVars": {
+		
+		//email: vars.idocData.MATMAS05.API
+		//email: Mule::p('outlook.recipients'),
+		//docNum: vars.jsonData.FFCCUSN default "",
+		//vtweg: vars.idocData.E1MARAM.E1MVKEM.VTWEG
+	},
+	"logger": {
+		fileName: message.attributes.name default "file-name-not-found",
+		//email: vars.idocData.E1KNA1M.Z1E1KNA1M.ZOWNER,
+		//docNum: vars.idocData.EDI_DC40.DOCNUM
+		//email: Mule::p('outlook.recipients'),
+		//docNum: vars.jsonData.FFCCUSN default "",
+	}
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<json-logger:logger doc:name="INFO: File received from SFTP for processing" doc:id="7324a327-aa01-4caf-a54d-5d9ff80854ea" config-ref="JSON_Logger_Config" message="Customer master File received from SFTP for processing">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+	fileName: vars.flowVars.sftp.fileName
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<json-logger:logger doc:name="DEBUG: Incoming Payload" doc:id="7321f1b0-4047-4942-9810-805a3b5b450d" config-ref="JSON_Logger_Config" message="Incoming Payload" tracePoint="BEFORE_REQUEST" priority="DEBUG">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+    payload: payload.^raw as String,
+    attributes: attributes 
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<flow-ref doc:name="customer-masterSub_Flow" doc:id="1eadc633-c919-441b-9ef6-8fb1cae48968" name="customer-masterSub_Flow" />
+			<json-logger:logger doc:name="INFO: Customer Master file processed from SFTP" doc:id="29e9d1e3-3264-4636-8ba3-3f02df110569" config-ref="JSON_Logger_Config" message="Customer Master file processed from SFTP" tracePoint="END" >
+				<json-logger:content ><![CDATA[#[output application/json ---
+{
+	fileName: vars.flowVars.sftp.fileName
+}]]]></json-logger:content>
+			</json-logger:logger>
+		</tracing:with-correlation-id>
+	</flow>
+	<sub-flow name="customer-masterSub_Flow" doc:id="fb272ab1-eb89-461e-8532-88cae00776d6" >
+		<!-- [STUDIO:"DEBUG: Customer Master Entry"]<json-logger:logger doc:name="DEBUG: Customer Master Entry" doc:id="14a9d05b-ce7a-4655-990e-b51aa017539f" message="Customer Master Sub Flow Started" config-ref="JSON_Logger_Config">
+			<json-logger:content ><![CDATA[#[output application/json
+&#45;&#45;-
+payload&#93;&#93;&#93;></json-logger:content>
+		</json-logger:logger> [STUDIO] -->
+		<ee:transform doc:name="Payload, sfDetails" doc:id="dc555569-d613-4214-9f62-6f169fbb2354" >
+			<ee:message >
+				<ee:set-payload resource="dwl/customerMasterMapping.dwl" />
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sfDetails" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	object: Mule::p('sfdc.customerMaster.object'),
+	externalId: Mule::p('sfdc.customerMaster.externalId')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Upsert Customer Data" doc:id="b81ae1ee-7964-43c8-a796-776ea35de056" name="upsert-data-to-salesforce"/>
+		<choice doc:name="Choice" doc:id="da9fce68-0738-42b4-8eb1-e0962b5fad24" >
+			<when expression="#[payload.totalFailedJobs == 0]">
+				<flow-ref doc:name="move-files-to-output-path" doc:id="04f3ad77-ae4d-4e7b-8a97-72e7e47ef4e0" name="move-files-to-output-path" />
+				<ee:transform doc:name="Transform Message" doc:id="2a054bde-9e1f-4517-8d64-40b148303cb0">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  traceId: correlationId,
+  timestamp: now() as DateTime,
+  message: "Success",
+  sfResponse: write(payload,"application/json")
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="INFO: Customer file processed successfully" doc:id="ce0ea36e-e81d-4020-8ddb-acc4f7a5c23a" config-ref="JSON_Logger_Config" message="Customer Master file processed successfully" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[output application/json
+---
+payload]]]></json-logger:content>
+				</json-logger:logger>
+			</when>
+			<otherwise>
+				<json-logger:logger doc:name="ERROR: Upsert in salesforce failed. Moving file to failed folder" doc:id="2ed2d08f-24ea-4a45-bf3a-d9926dd01d8c" config-ref="JSON_Logger_Config" message="Upsert in salesforce failed. Moving file to failed folder" tracePoint="FLOW" priority="ERROR" >
+					<json-logger:content ><![CDATA[#[output application/json ---
+{
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<ee:transform doc:name="Reverse Mapping" doc:id="83b3e57c-36fd-4e11-9ebe-5e176301e83a">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.allFailedJobs map ((item, index) -> {
+    FFCCMPN: item.originalFields.Company_Number__c default "",
+    FFCCUSN: item.originalFields.Customer_Number__c default "",
+    FFCARCD: item.originalFields.Active__c default "",
+    FFCCNMB: item.originalFields.Name default "",
+    FFCCA1B: if (item.originalFields.BillingStreet? and item.originalFields.BillingStreet != "") 
+                (item.originalFields.BillingStreet splitBy " ")[0] default "" 
+             else "",
+    FFCCA2B: if (item.originalFields.BillingStreet? and item.originalFields.BillingStreet != "") 
+                (item.originalFields.BillingStreet splitBy " ")[1] default "" 
+             else "",
+    FFCCTYB: item.originalFields.BillingCity default "",
+    FFCSTEB: item.originalFields.BillingState default "",
+    FFCZPCB: item.originalFields.BillingPostalCode default "",
+    FFCBCEM: item.originalFields.Bill_To_Customer_Email__c default "",
+    FFCBCWS: item.originalFields.Bill_To_Customer_Website__c default "",
+    FFCBCAC: item.originalFields.Bill_To_Customer_a_r_Contact__c default "",
+    FFCBAEM: item.originalFields.Bill_To_Customer_a_r_Email__c default "",
+    FFCBCPA: item.originalFields.Bill_To_Customer_Purch_Agent__c default "",
+    FFCBPEM: item.originalFields.Bill_To_Purch_Agent_Email__c default "",
+    FFCPHNB: item.originalFields.Phone default "",
+    FFCCDTE: if (item.originalFields.NCR_Created_Date__c?) 
+                (if (item.originalFields.NCR_Created_Date__c != null) 
+                    (item.originalFields.NCR_Created_Date__c as String replace /-/ with "") 
+                 else "") 
+             else "",
+    FFCDTEM:if (item.originalFields.NCR_Last_Modified_Date__c?) 
+                (if (item.originalFields.NCR_Last_Modified_Date__c != null) 
+                    (item.originalFields.NCR_Last_Modified_Date__c as String replace /-/ with "") 
+                 else "") 
+             else "",
+    FFCPHNF: item.originalFields.Fax default "",
+    errorMessage: item.errorMessage
+})]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[%dw 2.0&#10;output application/java&#10;---&#10;vars.flowVars.sftp.failedPath ++ &quot;/&quot; ++ &quot;sf_error_$(vars.jobId default '').txt&quot;]" doc:name="targetPath" doc:id="1e29aa90-544b-4593-b9bc-7ebf867fde15" variableName="targetPath" />
+				<flow-ref doc:name="write-files-to-sftp" doc:id="2e6b9467-a995-46c6-8b7f-45fadcd4fa8d" name="write-files-to-sftp" />
+				<flow-ref doc:name="move-files-to-output-path" doc:id="b80f7d49-9376-45fe-bd0f-156881280fa9" name="move-files-to-output-path" />
+				<ee:transform doc:name="Map Error Body" doc:id="a7c80e1e-0829-4334-833e-e164c673b42b">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	apiName: Mule::p('api.name'),
+	version: Mule::p('api.version'),
+	timeStamp: now() as DateTime,
+	success: false,
+	errorDetails: [{
+		message: payload.errors[0].message
+	}]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="INFO: Customer Masterfile processed failed" doc:id="661b1080-c64d-4818-90f8-27c504853065" config-ref="JSON_Logger_Config" message="Customer Master file processed failed" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[output application/json
+---
+vars.flowVars.logger ++
+{
+	success: false
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+		<json-logger:logger doc:name="DEBUG: Customer Master Exit" doc:id="55690a7b-7486-4125-b794-5be0f9742bdf" message="Customer Master Sub Flow Completed" config-ref="JSON_Logger_Config">
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+    request: payload
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+</mule>

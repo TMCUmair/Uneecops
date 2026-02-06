@@ -1,0 +1,58 @@
+api:
+  name: ${project.name}
+  version: ${project.version}
+  env: ${mule.env}
+
+json:
+  logger:
+    application:
+      name: ${project.name}
+      version: ${project.version}
+    
+sfdc:
+  customerMaster:
+    object: "Account"
+    externalId: "Customer_Number__c"
+  customerShipTo:
+    object: "Account"
+    externalId: "Customer_Number__c"
+  product:
+    object: "Product2"
+    externalId: "ProductCode"
+  salesOrder:
+    object: "Sales_Order__c"
+    externalId: "Order_Number__c"  
+  salesOrderDetails:
+    object: "Sales_Order_Line__c"
+    externalId: "Line_number__c"  
+    
+sftp:
+  directory:
+      customermaster:
+        input: "In/Customer Master"
+        failed: "Errors/Customer Master"
+        output: "Out/Customer Master"
+      customershipto:
+        input: "In/Customer Ship To"
+        failed: "Errors/Customer Ship To"
+        output: "Out/Customer Ship To"
+      product: "Sales Order Line Items"
+  schedulerExpresssion:
+      customermaster: "0 */10 * * * ?"
+      customershipto: "0 */10 * * * ?"
+
+flowState:
+  customerMaster: "started"
+  customerShipTo: "started"
+  main:
+    customerMaster: "stopped"
+    customerShipTo: "stopped"
+    
+log:
+  category:
+    conversion: "log.conversion"
+    contract: "log.contract"
+    orders: "log.order"
+    sftp: "log.sftp"
+    sfdc: "log.sfdc"
+    product: "log.product"

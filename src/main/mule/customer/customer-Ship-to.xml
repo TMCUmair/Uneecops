@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+	<flow name="customer-Ship-To" doc:id="f30b8e79-8270-492e-b91c-1f5bca376b57" initialState="${flowState.customerShipTo}">
+		<sftp:listener doc:name="On New or Updated File" doc:id="8ec0794d-8de6-46b9-9dea-db8bf6e52d2f" config-ref="SFTP_Config" directory="${sftp.directory.customershipto.input}" recursive="false">
+			<scheduling-strategy>
+				<cron expression="${sftp.schedulerExpresssion.customershipto}" timeZone="America/New_York" />
+			</scheduling-strategy>
+		</sftp:listener>
+		<set-variable value="#[output application/json&#10;---&#10;payload]" doc:name="jsonData" doc:id="dba3b080-0996-426b-ae89-8c4728493e15" variableName="jsonData" />
+		<tracing:with-correlation-id doc:name="With CorrelationID" doc:id="3adddecd-6fa8-48fd-a6ea-a078a8f8383d" correlationId="#[vars.flowVars.initialVars.originalCorrelationId default correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="710b8422-6fc2-466f-97ac-ea3ca45bdc43">
+				<ee:message />
+				<ee:variables>
+					<ee:set-variable variableName="flowVars"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"sftp": {
+		"fileName": message.attributes.name default "file-name-not-found",
+		"inputPath": Mule::p('sftp.directory.customershipto.input'),
+		"outputPath": Mule::p('sftp.directory.customershipto.output'),
+		"failedPath": Mule::p('sftp.directory.customershipto.failed')
+	},
+	"email": {
+		"subject" : "Customer Shit To SFTP to SF Sync Failed - " ++ message.attributes.name default "file-name-not-found"
+	},
+	"initialVars": {
+		
+		//email: vars.idocData.MATMAS05.API
+		//email: Mule::p('outlook.recipients'),
+		//docNum: vars.jsonData.FFCCUSN default "",
+		//vtweg: vars.idocData.E1MARAM.E1MVKEM.VTWEG
+	},
+	"logger": {
+		fileName: message.attributes.name default "file-name-not-found",
+		//email: vars.idocData.E1KNA1M.Z1E1KNA1M.ZOWNER,
+		//docNum: vars.idocData.EDI_DC40.DOCNUM
+		email: Mule::p('outlook.recipients'),
+		//docNum: vars.jsonData.FFCCUSN default "",
+	}
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<json-logger:logger doc:name="INFO: File received from SFTP for processing" doc:id="2423a3f8-bf47-4be4-8ec2-94b499a72acb" config-ref="JSON_Logger_Config" message="Customer ship to File received from SFTP for processing">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+	fileName: vars.flowVars.sftp.fileName
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<json-logger:logger doc:name="DEBUG: Incoming Payload" doc:id="8b256a95-69cf-4952-991f-a8bfa54281c6" config-ref="JSON_Logger_Config" message="Incoming Payload" tracePoint="BEFORE_REQUEST" priority="DEBUG">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+    payload: payload.^raw as String,
+    attributes: attributes 
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<flow-ref doc:name="customer-Ship-toSub_Flow" doc:id="df5096c7-1ee6-48b0-b318-e6a551902c4d" name="customer-Ship-toSub_Flow" />
+			<json-logger:logger doc:name="INFO: Customer Ship To file processed from SFTP" doc:id="65d965b3-97e3-4699-a607-d16ddc296e0d" config-ref="JSON_Logger_Config" message="Customer Ship To  file processed from SFTP" tracePoint="END">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+	fileName: vars.flowVars.sftp.fileName
+}]]]></json-logger:content>
+			</json-logger:logger>
+		</tracing:with-correlation-id>
+	</flow>
+	<sub-flow name="customer-Ship-toSub_Flow" doc:id="30c54fda-b0dc-4285-923a-ed40687cb12e" >
+		<!-- [STUDIO:"DEBUG: Customer Ship to Entry"]<json-logger:logger doc:name="DEBUG: Customer Ship to Entry" doc:id="6e49bb3e-93a3-4216-b418-0faae05a54ec" config-ref="JSON_Logger_Config" message="Customer Ship to  Sub Flow Started">
+			<json-logger:content><![CDATA[#[output application/json
+&#45;&#45;-
+payload&#93;&#93;&#93;></json-logger:content>
+		</json-logger:logger> [STUDIO] -->
+		<ee:transform doc:name="Payload, sfDetails" doc:id="a7470f1f-5e1e-49eb-b039-50d01352f960" >
+			<ee:message >
+				<ee:set-payload resource="dwl/customerShipTo.dwl" />
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sfDetails" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	object: Mule::p('sfdc.customerShipTo.object'),
+	externalId: Mule::p('sfdc.customerShipTo.externalId')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Upsert Customer Data" doc:id="3c3f9393-d44f-44ce-9e2a-9b6d10392b07" name="upsert-data-to-salesforce" />
+		<choice doc:name="Choice" doc:id="d6fe8df8-a31a-44d0-9b1f-b34128d3c930" >
+			<when expression="#[payload.totalFailedJobs == 0]" >
+				<flow-ref doc:name="move-files-to-output-path" doc:id="67073c26-bb03-4489-955c-e61cde3421f6" name="move-files-to-output-path" />
+				<ee:transform doc:name="Transform Message" doc:id="464f13c6-66c9-4d16-a689-7a5a0ee3f51f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  traceId: correlationId,
+  timestamp: now() as DateTime,
+  message: "Success",
+  sfResponse: write(payload,"application/json")
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="INFO: Customer Ship To file processed successfully" doc:id="107a519c-9c52-4438-b2ad-64b8c62bfac9" config-ref="JSON_Logger_Config" message="Customer Ship To file processed successfully" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[output application/json
+---
+payload]]]></json-logger:content>
+				</json-logger:logger>
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="ERROR: Upsert in salesforce failed. Moving file to failed folder" doc:id="8f3f5f38-45c9-45ed-bc67-29002a6ba678" config-ref="JSON_Logger_Config" message="Upsert in salesforce failed. Moving file to failed folder" tracePoint="FLOW" priority="ERROR" >
+					<json-logger:content ><![CDATA[#[output application/json ---
+{
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<ee:transform doc:name="Reverse Mapping" doc:id="d638c33e-7963-4495-aff3-fd34094df04c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.allFailedJobs map ((item, index) -> {
+    FFDCUSN: item.originalFields.Customer_Number__c default "",
+    FFDCNMB: item.originalFields.Name default "",
+    FFDCA1B: if (item.originalFields.ShippingStreet? and item.originalFields.ShippingStreet != "") 
+                (item.originalFields.ShippingStreet splitBy " ")[0] default "" 
+             else "",
+    FFDCA2B: if (item.originalFields.ShippingStreet? and item.originalFields.ShippingStreet != "") 
+                // Get everything after first space
+                do {
+                    var parts = item.originalFields.ShippingStreet splitBy " "
+                    ---
+                    if (sizeOf(parts) > 1)
+                        joinBy(parts[1 to -1], " ")
+                    else
+                        ""
+                }
+             else "",
+    FFDCTYB: item.originalFields.ShippingCity default "",
+    FFDSTEB: item.originalFields.ShippingState default "",
+    FFDZPCB: item.originalFields.ShippingPostalCode default "",
+    FFDSCEM: item.originalFields.Ship_To_Customer_Email__c default "",
+    FFDSCAC: item.originalFields.Ship_To_Customer_a_r_Contact__c default "",
+    FFDSAEM: item.originalFields.Ship_To_Customer_a_r_Email__c default "",
+    FFDSCPA: item.originalFields.Ship_To_Customer_Purch_Agent__c default "",
+    FFDSPEM: item.originalFields.Ship_To_Purch_Agent_Email__c default "",
+    FFDPHNB: item.originalFields.Ship_To_Phone__c default "",
+    FFDSLNB: item.originalFields.Sales_Rep__c default "",
+    FFDCSCD: item.originalFields.Chain_store_code__c default "",
+    FFDTRMC: item.originalFields.Terms_Code__c default "",
+    FFDINSI: item.originalFields.Special_Instructions__c default "",
+    FFDCTPE: item.originalFields.Customer_Type_Number__c default "",
+    FFDDTEI: if (item.originalFields.Date_of_Last_Order__c != null) 
+                (item.originalFields.Date_of_Last_Order__c as String replace /-/ with "") 
+             else "",
+    FFDDTEL: if (item.originalFields.Date_of_Last_Payment__c != null) 
+                (item.originalFields.Date_of_Last_Payment__c as String replace /-/ with "") 
+             else "",
+    FFDDTBC: if (item.originalFields.Date_of_First_Order__c != null) 
+                (item.originalFields.Date_of_First_Order__c as String replace /-/ with "") 
+             else "",
+    FFDDSOA: item.originalFields.Average_Daily_Sales__c default null,
+    FFDAMDU: item.originalFields.Customer_Amount_Due__c default null,
+    FFDAGE0: item.originalFields.Age_Period_0_Amount__c default null,
+    FFDAGE1: item.originalFields.Age_Period_1_Amount__c default null,
+    FFDAGE2: item.originalFields.Age_Period_2_Amount__c default null,
+    FFDAGE3: item.originalFields.Age_Period_3_Amount__c default null,
+    FFDAGE4: item.originalFields.Age_Period_4_Amount__c default null,
+    FFDPHNF: item.originalFields.Ship_To_Fax__c default "",
+    FFDORGN: item.originalFields.Order_Guide_Number__c default "",
+    FFDLSPY: item.originalFields.A_R_Last_Pay_Amount__c default null,
+    FFDCGRP: item.originalFields.Customer_Group_Code__c default "",
+    errorMessage: item.errorMessage
+})]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[%dw 2.0&#10;output application/java&#10;---&#10;vars.flowVars.sftp.failedPath ++ &quot;/&quot; ++ &quot;sf_error_$(vars.jobId default '').txt&quot;]" doc:name="targetPath" doc:id="a3829012-87d9-475f-9352-aeff9251a0b3" variableName="targetPath" />
+				<flow-ref doc:name="write-files-to-sftp" doc:id="29573850-ec78-4aa3-bbff-d392e32dfc72" name="write-files-to-sftp" targetValue="#[payload.allFailedJobs]"/>
+				<flow-ref doc:name="move-files-to-output-path" doc:id="e2cd6f1e-db69-48ed-9226-b0249f938562" name="move-files-to-output-path" />
+				<ee:transform doc:name="Map Error Body" doc:id="f895ebb4-2fa4-474f-bb52-e9b40ae6a879" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	apiName: Mule::p('api.name'),
+	version: Mule::p('api.version'),
+	timeStamp: now() as DateTime,
+	success: false,
+	errorDetails: [{
+		message: payload.errors[0].message
+	}]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="INFO: Customer Ship To File processed failed" doc:id="0d91875a-02a4-431b-8df8-65dce56c4ca1" config-ref="JSON_Logger_Config" message="Customer Ship To  file processed failed" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[output application/json
+---
+vars.flowVars.logger ++
+{
+	success: false
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+		<json-logger:logger doc:name="DEBUG: Customer Ship to Exit" doc:id="940dc567-62f3-42c6-ace8-01a99e450138" config-ref="JSON_Logger_Config" message="Customer Ship to Sub Flow Completed">
+			<json-logger:content><![CDATA[#[output application/json ---
+{
+    request: payload
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+</mule>

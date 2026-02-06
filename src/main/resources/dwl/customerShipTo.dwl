@@ -1,0 +1,37 @@
+%dw 2.0
+output application/json
+---
+payload map ((item, index) ->{
+	Customer_Number__c: trim(item.FFDCUSN),
+	Name: if(item.FFDCNMB?) trim(item.FFDCNMB)  default  "" else "KeyToBeRemoved",
+	ShippingStreet: if(item.FFDCA1B? or item.FFDCA2B?) trim(item.FFDCA1B  default "" ++ " " ++ item.FFDCA2B  default "") else "KeyToBeRemoved",
+	ShippingCity: if(item.FFDCTYB?) trim(item.FFDCTYB)  default  "" else "KeyToBeRemoved",
+	ShippingState: if(item.FFDSTEB?) trim(item.FFDSTEB)  default  "" else "KeyToBeRemoved",
+	ShippingPostalCode: if(item.FFDZPCB?) trim(item.FFDZPCB)  default  "" else "KeyToBeRemoved",
+	Ship_To_Customer_Email__c: if(item.FFDSCEM?) trim(item.FFDSCEM)  default  "" else "KeyToBeRemoved",
+	Ship_To_Customer_a_r_Contact__c: if(item.FFDSCAC?) trim(item.FFDSCAC)  default  "" else "KeyToBeRemoved",
+	Ship_To_Customer_a_r_Email__c: if(item.FFDSAEM?) trim(item.FFDSAEM)  default  "" else "KeyToBeRemoved",
+	Ship_To_Customer_Purch_Agent__c: if(item.FFDSCPA?) trim(item.FFDSCPA)  default  "" else "KeyToBeRemoved",
+	Ship_To_Purch_Agent_Email__c: if(item.FFDSPEM?) trim(item.FFDSPEM)  default  "" else "KeyToBeRemoved",
+	Ship_To_Phone__c: if(item.FFDPHNB?) trim(item.FFDPHNB)  default  "" else "KeyToBeRemoved",
+	Sales_Rep__c: if(item.FFDSLNB?) trim(item.FFDSLNB)  default  "" else "KeyToBeRemoved",
+	Chain_store_code__c: if(item.FFDCSCD?) trim(item.FFDCSCD)  default  "" else "KeyToBeRemoved",
+	Terms_Code__c: if(item.FFDTRMC?) trim(item.FFDTRMC)  default  "" else "KeyToBeRemoved",
+	Special_Instructions__c: if(item.FFDINSI?) trim(item.FFDINSI)  default  "" else "KeyToBeRemoved",
+    Customer_Type_Number__c: if(item.FFDCTPE?) trim(item.FFDCTPE)  default  "" else "KeyToBeRemoved",
+	Date_of_Last_Order__c: if(item.FFDDTEI?) (if(!isEmpty(item.FFDDTEI)) ((item.FFDDTEI[0 to 3]++'-' ++ item.FFDDTEI[4 to 5]++'-' ++ item.FFDDTEI[6 to 7]) as Date {format: "yyyy-MM-dd"}  default null) else null) else "KeyToBeRemoved",
+	Date_of_Last_Payment__c: if(item.FFDDTEL?) (if(!isEmpty(item.FFDDTEL)) ((item.FFDDTEL[0 to 3]++'-' ++ item.FFDDTEL[4 to 5]++'-' ++ item.FFDDTEL[6 to 7]) as Date {format: "yyyy-MM-dd"}  default null) else null) else "KeyToBeRemoved",
+	Date_of_First_Order__c: if(item.FFDDTBC?) (if(!isEmpty(item.FFDDTBC)) ((item.FFDDTBC[0 to 3]++'-' ++ item.FFDDTBC[4 to 5]++'-' ++ item.FFDDTBC[6 to 7]) as Date {format: "yyyy-MM-dd"}  default null) else null) else "KeyToBeRemoved",
+	Average_Daily_Sales__c: if(item.FFDDSOA?) item.FFDDSOA default  null else "KeyToBeRemoved",
+	Customer_Amount_Due__c: if(item.FFDAMDU?) item.FFDAMDU default  null else "KeyToBeRemoved",
+	Age_Period_0_Amount__c: if(item.FFDAGE0?) item.FFDAGE0 default  null else "KeyToBeRemoved",
+	Age_Period_1_Amount__c: if(item.FFDAGE1?) item.FFDAGE1 default  null else "KeyToBeRemoved",
+	Age_Period_2_Amount__c: if(item.FFDAGE2?) item.FFDAGE2 default  null else "KeyToBeRemoved",
+	Age_Period_3_Amount__c: if(item.FFDAGE3?) item.FFDAGE3 default  null else "KeyToBeRemoved",
+	Age_Period_4_Amount__c: if(item.FFDAGE4?) item.FFDAGE4 default  null else "KeyToBeRemoved",
+	Ship_To_Fax__c: item.FFDPHNF,
+	Order_Guide_Number__c: if(item.FFDORGN?) trim(item.FFDORGN) default  "" else "KeyToBeRemoved",
+	A_R_Last_Pay_Amount__c: if(item.FFDLSPY?) item.FFDLSPY default  null else "KeyToBeRemoved",
+	Customer_Group_Code__c: if(item.FFDCGRP?) trim(item.FFDCGRP) default  "" else "KeyToBeRemoved",
+} filterObject ((value, key, index) -> value != "KeyToBeRemoved")
+)

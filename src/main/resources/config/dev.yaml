@@ -1,0 +1,25 @@
+https:
+  host: "0.0.0.0"
+  port: "8081"
+  readTimeout: "30000"
+  reconnection:
+    frequency: "2000"
+    attempts: "3"
+  listener:
+    path: "/v1/*"
+    
+    
+sfdc:
+  tokenUrl: "https://platform-fun-6694--mule.sandbox.my.salesforce.com/services/oauth2/token"
+  connectionTimeout: "0"
+  responseTimeout: "90000"
+  
+sftp:
+  host: "s-55521ae3dc3a47ca8.server.transfer.us-east-2.amazonaws.com"
+  username: "mulesoftUser"
+  port: "22"
+  
+outbound:
+  reconnection:
+    frequency: "2000"
+    attempts: "5"

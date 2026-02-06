@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="upsert-data-to-salesforce"
+		doc:id="f55fa3a8-9fc0-4cd9-a787-165c5d1d6182">
+		<json-logger:logger
+			doc:name="DEBUG: Request body size before upserting in salesforce"
+			doc:id="2fd34ad1-7ce6-485d-a9a9-e3adc2da32a6"
+			message="Request body size before upserting in salesforce"
+			config-ref="JSON_Logger_Config">
+			<json-logger:content><![CDATA[#[output application/json ---
+{
+    requestSize: sizeOf(payload)
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<ee:transform doc:name="json to csv"
+			doc:id="bde03ca1-05df-4538-be27-eeee16cd7e45">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output text/csv 
+header=true, separator=",", quoteValues=false, lineSeparator="\r\n"
+---
+payload map (item) -> 
+    item mapObject ((value, key) -> 
+        if (value is String) 
+            // Remove escaped quotes from string values
+            (key): replace(value, "\"") with ('')  // or replace(value, '\\"', '')
+        else 
+            (key): value
+    )]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create-job-bulk-api-v2
+			doc:name="Upsert" doc:id="455150de-8125-4848-afbb-81819195722d"
+			config-ref="Salesforce_Config" objectType="#[vars.sfDetails.object]"
+			externalIdFieldName="#[vars.sfDetails.externalId]" operation="upsert"
+			lineEnding="CRLF" />
+		<set-variable value="#[payload.id]" doc:name="jobId"
+			doc:id="50080ab4-1285-4e6d-9468-52467096e489" variableName="jobId" />
+		<json-logger:logger
+			doc:name="DEBUG: Response body after upserting in salesforce"
+			doc:id="91c4ac0d-2f5d-4856-ae76-08e4bd273468"
+			message="JobId after bulk upserting in salesforce"
+			config-ref="JSON_Logger_Config">
+			<json-logger:content><![CDATA[#[output application/json ---
+{
+	responseSize: sizeOf(payload),
+    jobId: vars.jobId 
+}]]]></json-logger:content>
+		</json-logger:logger>
+
+		<until-successful maxRetries="3600"
+			doc:name="Until Successful"
+			doc:id="45b48d7a-0017-44ac-a2e0-afc8e6bcbf96"
+			millisBetweenRetries="5000">
+
+			<salesforce:get-job-state-bulk-api-v2
+				doc:name="Get job state bulk api v 2"
+				doc:id="8ed3588c-76bc-45e4-8627-f9b0ed69865e" config-ref="Salesforce_Config"
+				id="#[vars.jobId]" />
+
+			<set-variable value="#[payload.state]"
+				doc:name="update jobstate"
+				doc:id="7d17625f-c08a-46d7-8767-4bea0935bbe9"
+				variableName="jobstate" />
+
+			<json-logger:logger doc:name="Records Processed Succesfully in Salesforce" doc:id="7023377c-bfb8-46f4-9065-85a0cba92d3e" config-ref="JSON_Logger_Config" message="Records Processed Succesfully in Salesforce" />
+			<choice doc:name="Check Job State"
+				doc:id="7a0208f3-0468-413a-9146-fb2d92602eb3">
+
+				<when expression='#[vars.jobstate == "Failed"]'>
+
+					<json-logger:logger doc:name="Job Failed" doc:id="76143302-90e9-44b3-979d-5c6d71ef3778" config-ref="JSON_Logger_Config" message="Job Failed. #[payload.errorMessage]. #[payload.state]" />
+					<salesforce:retrieve-job-failed-results-bulk-v2
+						doc:name="Retrieve job failed results bulk v 2"
+						doc:id="a4ce99b0-4ed5-4cc2-a8ce-2283a7e5e43b"
+						config-ref="Salesforce_Config" id="#[vars.jobId]" target="failedJobs"/>
+
+				</when>
+				<when expression='#[vars.jobstate == "JobComplete"]'>
+
+					<json-logger:logger doc:name="Job Failed" doc:id="0340f123-2a83-494a-8a6e-4246fc368ff9" config-ref="JSON_Logger_Config" message="Job Failed. #[payload.errorMessage]. #[payload.state]" />
+					<salesforce:retrieve-job-failed-results-bulk-v2
+						doc:name="Retrieve job failed results bulk v 2"
+						doc:id="9cad5bb0-f6df-4b4b-a978-27f6dbea604e"
+						config-ref="Salesforce_Config" id="#[vars.jobId]" target="failedJobs"/>
+
+				</when>
+				<otherwise>
+
+					<json-logger:logger doc:name="Going to Raise Exception" doc:id="d5d6133c-8567-48ce-9268-3fac526744b5" config-ref="JSON_Logger_Config" message="Going to Raise Exception"/>
+					<raise-error doc:name="Raise error"
+						doc:id="7b368184-4107-4356-b605-a5c83c1c67ef"
+						type="SF:JOB_IN_PROGRESS"
+						description="Bulk API 2 is still in progress" />
+
+				</otherwise>
+			</choice>
+
+		</until-successful>
+		<ee:transform doc:name="Transform Message" doc:id="001f1c44-4a89-4b4b-8b15-599102608a8b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "timestamp": now(),
+  "totalFailedJobs": sizeOf(vars.failedJobs default []),
+  "allFailedJobs": vars.failedJobs default []
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="SFDC Impl Done" doc:id="9719ea49-485e-4722-baa9-2277cfe9cded" config-ref="JSON_Logger_Config" message="SFDC Impl Done"/>
+
+	</sub-flow>
+</mule>

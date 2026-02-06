@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8ff09c27-3b8a-4953-87c6-cb5fd389f658">
+        <http:listener-connection host="${https.host}" port="${https.port}" readTimeout="${https.readTimeout}">
+            <reconnection>
+                <reconnect frequency="${https.reconnection.frequency}" count="${https.reconnection.attempts}" />
+            </reconnection>
+        </http:listener-connection>
+    </http:listener-config>
+    <configuration-properties doc:name="Configuration properties" doc:id="cc50ae55-cee2-4d5a-8069-853d734b086d" file="config/${mule.env}.yaml" />
+    <apikit:config name="mqf-api-integration-config" api="mqf-api-integration.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="ab4a3aaa-5ad7-408b-9476-1c0ef448a25b">
+        <salesforce:oauth-client-credentials-connection connectionTimeout="${sfdc.connectionTimeout}">
+            <reconnection>
+				<reconnect-forever frequency="30000" />
+            </reconnection>
+            <salesforce:oauth-client-credentials clientId="${secure::sfdc.consumerKey}" clientSecret="${secure::sfdc.consumerSecret}" tokenUrl="${sfdc.tokenUrl}" />
+        </salesforce:oauth-client-credentials-connection>
+    </salesforce:sfdc-config>
+    <configuration-properties doc:name="Configuration properties" doc:id="792e73fb-5cda-42a0-9560-1f1eb0006ebf" file="config/secure/${mule.env}-secure.yaml" />
+    <json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="11cd8fcc-3a1a-4c52-85fd-923e479eda51" environment="${mule.env}" />
+    <configuration-properties doc:name="Configuration properties" doc:id="75d6a62a-6ff9-4daa-9322-d3e5cf2188b5" file="config\common.yaml" />
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="7220c823-2845-4730-a6d8-daf202b54b9c" >
+		<sftp:connection host="${sftp.host}" username="${sftp.username}" identityFile="uneecops_key_sftp" passphrase="${secure::sftp.passphrase}" workingDir="/ncrtosf" port="${sftp.port}"/>
+	</sftp:config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="dab358cd-5065-4854-94b7-73b632954c20" file="config/secure/${mule.env}-secure.yaml" key="${mule.key}" />
+</mule>

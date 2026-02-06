@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_f55fa3a8_9fc0_4cd9_a787_165c5d1d6182_Input_Payload = Array<{|  Company_Number__c: Any,   Customer_Number__c: String,   Active__c: Any,   Name: Any,   BillingStreet: Any,   BillingCity: Any,   BillingState: Any,   BillingPostalCode: Any,   Bill_To_Customer_Email__c: Any,   Bill_To_Customer_Website__c: Any,   Bill_To_Customer_a_r_Contact__c: Any,   Bill_To_Customer_a_r_Email__c: Any,   Bill_To_Customer_Purch_Agent__c: Any,   Bill_To_Purch_Agent_Email__c: Any,   Phone: Any,   NCR_Created_Date__c: Any,   Fax: Any|}>
+

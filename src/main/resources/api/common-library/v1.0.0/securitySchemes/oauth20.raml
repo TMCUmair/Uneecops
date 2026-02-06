@@ -1,0 +1,21 @@
+#%RAML 1.0 SecurityScheme
+
+type: OAuth 2.0
+description: |
+  OAuth 2.0 authentication using client credentials or authorization code grant.
+describedBy:
+  headers:
+    Authorization:
+      description: |
+        Used to send a valid OAuth 2 access token. Example: "Bearer {token}"
+      type: string
+  responses:
+    401:
+      description: |
+        Unauthorized. The access token is missing, invalid, or expired.
+settings:
+  authorizationUri: https://auth.example.com/oauth/authorize
+  accessTokenUri: https://auth.example.com/oauth/token
+  authorizationGrants: [ client_credentials ]
+  scopes: [ read, write ]
+    

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<sub-flow name="move-files-to-failed-path" doc:id="d1537a49-e5e2-40ca-b034-43f74cdc4a70" >
+		<json-logger:logger doc:name="INFO: Moving file to failed folder" doc:id="953e07b7-52b5-482f-9f82-bbf08f952f01" config-ref="JSON_Logger_Config" message="Moving file to failed folder" tracePoint="BEFORE_REQUEST">
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+	inputPath: vars.flowVars.sftp.inputPath,
+	failedPath: vars.flowVars.sftp.failedPath
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<sftp:move doc:name="Move to failed folder" doc:id="fe58d4a5-3c17-43f0-8345-fad226d1409c" config-ref="SFTP_Config" sourcePath="#[vars.flowVars.sftp.inputPath ++ '/' ++ vars.flowVars.sftp.fileName]" targetPath="#[vars.flowVars.sftp.failedPath]" overwrite="true"/>
+		<json-logger:logger doc:name="INFO: Response from move file" doc:id="bcc13d47-7106-417a-a2b7-0ecc09190536" config-ref="JSON_Logger_Config" message="Response from move file" tracePoint="AFTER_REQUEST" >
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+	response: true
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+	<sub-flow name="move-files-to-output-path" doc:id="d6a2d595-e73c-4cbe-b680-898a05742cb9">
+		<json-logger:logger doc:name="INFO: Moving file to output folder" doc:id="f94051d2-e46d-4cf1-8c58-b6504bfc368b" config-ref="JSON_Logger_Config" message="Moving file to output folder" tracePoint="BEFORE_REQUEST">
+			<json-logger:content><![CDATA[#[output application/json ---
+{
+	inputPath: vars.flowVars.sftp.inputPath,
+	outputPath: vars.flowVars.sftp.outputPath
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<sftp:move doc:name="Move to output folder" doc:id="c0abc0f6-a1e5-4fab-927d-519d62675658" config-ref="SFTP_Config" sourcePath="#[vars.flowVars.sftp.inputPath ++ '/' ++ vars.flowVars.sftp.fileName]" targetPath="#[vars.flowVars.sftp.outputPath]" overwrite="true"/>
+		<json-logger:logger doc:name="INFO: Response from move file" doc:id="82888cb6-1a2f-4bd4-9c3c-542c89cff584" config-ref="JSON_Logger_Config" message="Response from move file" tracePoint="AFTER_REQUEST" >
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+	response: true
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+	<sub-flow name="write-files-to-sftp" doc:id="c38c2aab-359a-4261-98cf-4dd239cbad8f" >
+		<json-logger:logger doc:name="INFO: Before writing file to target folder" doc:id="ee180086-1af6-4202-a2a0-fba75a2170cd" config-ref="JSON_Logger_Config" message="Before writing file to target folder" tracePoint="BEFORE_REQUEST">
+			<json-logger:content ><![CDATA[#[output application/json
+---
+{
+	targetPath: vars.targetPath
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="DEBUG: Request body before writing file" doc:id="e7ef58ee-3412-4c19-9c20-4de8797725ec" config-ref="JSON_Logger_Config" message="Request body before writing file" tracePoint="BEFORE_REQUEST" priority="DEBUG">
+			<json-logger:content><![CDATA[#[output application/json ---
+{
+    request: payload.^raw as String
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<sftp:write doc:name="Write file to targetPath" doc:id="ff041ec2-2307-438c-8e80-f34740500b71" config-ref="SFTP_Config" path="#[vars.targetPath]" />
+		<json-logger:logger doc:name="INFO: Response from write file" doc:id="a6c2ec7b-8f88-4bc3-9942-ffef8f602b33" config-ref="JSON_Logger_Config" message="Response from write file" tracePoint="AFTER_REQUEST" >
+			<json-logger:content ><![CDATA[#[output application/json ---
+{
+	response: true
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+</mule>

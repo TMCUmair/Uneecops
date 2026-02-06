@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<error-handler name="global-error-handler" doc:id="25b8df57-810a-4258-a268-ac5abb204a1f" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fde38881-446c-4038-8dee-726e08999458" type="APIKIT:BAD_REQUEST">
+			<ee:transform doc:name="Transform Message" doc:id="d5ffe422-2930-4000-97ae-987d7458bff9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  timestamp: now() as DateTime,
+  "errorDetails": [
+    {
+      "errorType": "HTTP:BAD_REQUEST",
+      "errorMessage": error.description,
+      "errorSource": "Mulesoft"
+    }
+  ]
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="400" doc:name="httpStatus400" doc:id="9d401d9e-aa52-4bbe-9818-4b378098e895" variableName="httpStatus"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d238e120-2577-46d9-b062-b49a48f3ddd9" type="APIKIT:NOT_FOUND">
+			<ee:transform doc:name="Transform Message" doc:id="2fd2e308-e27b-4c71-ad38-7d3e3d7bc30a" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  timestamp: now() as DateTime,
+  "errorDetails": [
+    {
+      "errorType": "HTTP:NOT_FOUND",
+      "errorMessage": error.description,
+      "errorSource": "Mulesoft"
+    }
+  ]
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="400" doc:name="httpStatus404" doc:id="1ca4fe31-8bc8-4d23-88d4-388a2c72d9db" variableName="httpStatus"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="418043a8-0029-44c6-a81f-f13424276f77" type="APIKIT:METHOD_NOT_ALLOWED">
+			<ee:transform doc:name="Transform Message" doc:id="a12ee390-f175-4064-bc64-cca32047295e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  timestamp: now() as DateTime,
+  "errorDetails": [
+    {
+      "errorType": "HTTP:METHOD_NOT_ALLOWED",
+      "errorMessage": error.description,
+      "errorSource": "Mulesoft"
+    }
+  ]
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="405" doc:name="httpStatus405" doc:id="e6f02f5e-facf-444b-9a2f-224b5f999322" variableName="httpStatus"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6edff30f-3050-49b6-baa1-9186eac15f0e" type="APIKIT:NOT_ACCEPTABLE">
+			<ee:transform doc:name="Transform Message" doc:id="dc643069-cfef-425d-87f5-d158bf6fd475" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  timestamp: now() as DateTime,
+  "errorDetails": [
+    {
+      "errorType": "HTTP:NOT_ACCEPTABLE",
+      "errorMessage": error.description,
+      "errorSource": "Mulesoft"
+    }
+  ]
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="406" doc:name="httpStatus406" doc:id="66147564-6b29-45c7-a064-fedc6eaf2762" variableName="httpStatus"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e2d460be-921e-4e54-8606-c15dc4ee5432" type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+			<ee:transform doc:name="Transform Message" doc:id="ad43131d-6d62-406a-9c1a-8d65d68f43f9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  timestamp: now() as DateTime,
+  "errorDetails": [
+    {
+      "errorType": "HTTP:UNSUPPORTED_MEDIA_TYPE",
+      "errorMessage": error.description,
+      "errorSource": "Mulesoft"
+    }
+  ]
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="415" doc:name="httpStatus415" doc:id="3ce452db-fa21-429b-ada7-db7981727d5f" variableName="httpStatus"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="aae3c62d-1981-4dda-8e43-cb0160498288" type="APIKIT:NOT_IMPLEMENTED">
+			<ee:transform doc:name="Transform Message" doc:id="c56d3ac1-7ce4-44d1-98d3-fe6eb85b7a09" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiName: Mule::p('api.name'),
+  apiVersion: Mule::p('api.version'),
+  timestamp: now() as DateTime,
+  "errorDetails": [
+    {
+      "errorType": "HTTP:NOT_IMPLEMENTED",
+      "errorMessage": error.description,
+      "errorSource": "Mulesoft"
+    }
+  ]
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="501" doc:name="httpStatus501" doc:id="7e8c84f7-3006-405b-9352-fd39d854d47e" variableName="httpStatus"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b6a738d6-d8f9-45b1-b6e3-43ffd47a189b" type="ANY">
+			<ee:transform doc:name="Transform Message" doc:id="5b968cab-13d4-47bd-8083-8d88969c0547" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	apiName: Mule::p('api.name'),
+	apiVersion: Mule::p('api.version'),
+	traceId: vars.flowVars.correlationId,
+	timestamp: now() as DateTime,
+	errorDetails:[
+		{
+			errorType: (error.errorType.namespace default "") ++ ":" ++ (error.errorType.identifier default ""),
+			message: error.description,
+			errorSource:'Mulesoft'
+			
+		}
+	]
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="Error:Exception Occured" doc:id="844534b5-9321-48fa-9b34-bf08c7b0469c" config-ref="JSON_Logger_Config" message='#["Exception Occured in "++ vars.flowVars.flowName ++" Flow"]'>
+				<json-logger:content ><![CDATA[#[output application/json ---
+{
+	correlationId : vars.flowVars.correlationId,
+    response: payload    
+}]]]></json-logger:content>
+			</json-logger:logger>
+		</on-error-propagate>
+	</error-handler>
+</mule>
