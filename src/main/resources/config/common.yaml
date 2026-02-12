@@ -18,7 +18,7 @@ sfdc:
     externalId: "Customer_Number__c"
   product:
     object: "Product2"
-    externalId: "ProductCode"
+    externalId: "Product_Code_External__c"
   salesOrder:
     object: "Sales_Order__c"
     externalId: "Order_Number__c"  
@@ -36,14 +36,19 @@ sftp:
         input: "In/Customer Ship To"
         failed: "Errors/Customer Ship To"
         output: "Out/Customer Ship To"
-      product: "Sales Order Line Items"
+      product:
+        input: "In/Item Master"
+        failed: "Errors/Item Master"
+        output: "Out/Item Mastero"
   schedulerExpresssion:
       customermaster: "0 */10 * * * ?"
-      customershipto: "0 */10 * * * ?"
+      customershipto: "0 */15 * * * ?"
+      product: "0 */5 * * * ?"
 
 flowState:
-  customerMaster: "started"
-  customerShipTo: "started"
+  customerMaster: "stopped"
+  customerShipTo: "stopped"
+  product: "started"
   main:
     customerMaster: "stopped"
     customerShipTo: "stopped"

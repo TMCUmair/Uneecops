@@ -9,9 +9,15 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-		<app.runtime>4.9.6</app.runtime>
+	
+		<app.runtime>4.9-java17</app.runtime>
 		<mule.maven.plugin.version>4.3.0</mule.maven.plugin.version>
+		<java.version>17</java.version>
+		<env>Test</env>
+		<app.name>test-api-proxy-v2-sg</app.name>
+		<anypoint.businessGroupId>38eccc72-b20f-455c-a119-e48ca522f616
+		</anypoint.businessGroupId>
+	
 	</properties>
 
 	<build>
@@ -27,6 +33,33 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
+				<cloudHubDeployment>
+							<uri>https://anypoint.mulesoft.com</uri>
+							<muleVersion>${app.runtime}</muleVersion>
+							<businessGroupId>${anypoint.businessGroupId}</businessGroupId>
+							<deploymentTimeout>1200000</deploymentTimeout>
+							<!-- 20 minutes -->
+							<!-- <username>${anypoint.username}</username> <password>${anypoint.password}</password> -->
+							<!-- Start: CONNECTED APP -->
+							<connectedAppClientId>${client.id}</connectedAppClientId>
+							<connectedAppClientSecret>${client.secret}</connectedAppClientSecret>
+							<connectedAppGrantType>client_credentials</connectedAppGrantType>
+							<!-- End: CONNECTED APP -->
+							<applicationName>${app.name}</applicationName>
+							<environment>${env}</environment>
+							<workerType>MICRO</workerType>
+							<region>us-east-2</region>
+							<workers>1</workers>
+							<objectStoreV2>false</objectStoreV2>
+							<!-- Start: SECURED PROPERTIES CI/CD -->
+							<properties>
+								<mule.env>dev</mule.env>
+								<anypoint.platform.config.analytics.agent.enabled>false</anypoint.platform.config.analytics.agent.enabled>
+						<!-- 		<document.domain>ironpdf-uat.kap.sg</document.domain>
+								<kss.host>kss-test1.aws.kaplan.com.sg</kss.host> -->
+							</properties>
+							<!-- End: SECURED PROPERTIES CI/CD -->
+						</cloudHubDeployment>
 					<classifier>---- select project type ----</classifier>
 				</configuration>
 			</plugin>
