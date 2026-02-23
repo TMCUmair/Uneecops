@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
     <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="ab4a3aaa-5ad7-408b-9476-1c0ef448a25b">
         <salesforce:oauth-client-credentials-connection connectionTimeout="${sfdc.connectionTimeout}">
             <reconnection>
-				<reconnect-forever frequency="30000" />
+				<reconnect frequency="${outbound.reconnection.frequency}" count="${outbound.reconnection.attempts}" />
             </reconnection>
             <salesforce:oauth-client-credentials clientId="${secure::sfdc.consumerKey}" clientSecret="${secure::sfdc.consumerSecret}" tokenUrl="${sfdc.tokenUrl}" />
         </salesforce:oauth-client-credentials-connection>

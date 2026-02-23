@@ -51,7 +51,8 @@ output application/java
 			<json-logger:logger doc:name="INFO: File received from SFTP for processing" doc:id="2423a3f8-bf47-4be4-8ec2-94b499a72acb" config-ref="JSON_Logger_Config" message="Customer ship to File received from SFTP for processing">
 				<json-logger:content><![CDATA[#[output application/json ---
 {
-	fileName: vars.flowVars.sftp.fileName
+	fileName: vars.flowVars.sftp.fileName,
+	jsonDataSize: sizeOf(vars.jsonData)
 }]]]></json-logger:content>
 			</json-logger:logger>
 			<json-logger:logger doc:name="DEBUG: Incoming Payload" doc:id="8b256a95-69cf-4952-991f-a8bfa54281c6" config-ref="JSON_Logger_Config" message="Incoming Payload" tracePoint="BEFORE_REQUEST" priority="DEBUG">
@@ -71,11 +72,6 @@ output application/java
 		</tracing:with-correlation-id>
 	</flow>
 	<sub-flow name="customer-Ship-toSub_Flow" doc:id="30c54fda-b0dc-4285-923a-ed40687cb12e" >
-		<!-- [STUDIO:"DEBUG: Customer Ship to Entry"]<json-logger:logger doc:name="DEBUG: Customer Ship to Entry" doc:id="6e49bb3e-93a3-4216-b418-0faae05a54ec" config-ref="JSON_Logger_Config" message="Customer Ship to  Sub Flow Started">
-			<json-logger:content><![CDATA[#[output application/json
-&#45;&#45;-
-payload&#93;&#93;&#93;></json-logger:content>
-		</json-logger:logger> [STUDIO] -->
 		<ee:transform doc:name="Payload, sfDetails" doc:id="a7470f1f-5e1e-49eb-b039-50d01352f960" >
 			<ee:message >
 				<ee:set-payload resource="dwl/customerShipTo.dwl" />
@@ -177,6 +173,7 @@ payload.allFailedJobs map ((item, index) -> {
     FFDORGN: item.originalFields.Order_Guide_Number__c default "",
     FFDLSPY: item.originalFields.A_R_Last_Pay_Amount__c default null,
     FFDCGRP: item.originalFields.Customer_Group_Code__c default "",
+    FFDARCD: item.originalFields.Active__c default "",
     errorMessage: item.errorMessage
 })]]></ee:set-payload>
 					</ee:message>

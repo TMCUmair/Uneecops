@@ -1,0 +1,6 @@
+sfdc:
+  consumerKey: "![A9LdTx4zJmNbXx12pJ8FNiSAKwKmoDc9kLdOyO3YbC2v4TgwCd8ucSHuCutxDHGZ8DqO8o3PLEudY6hPqgqfwnuDRElb6Zs41JnpHmb8jsUJL6N8gfCQrqBFsCHrJjSQ]"
+  consumerSecret: "![bigNASlhqYc4HOu/A+9f0u6z2f72CvvR6UzR1L1sBYqAiGWEXdZ70liOm+4BqoiBG34lCmQkYMGb8/4v7cqxBE8vdt9AcPp/PeeLEPnwqNU=]"
+  
+sftp:  
+  passphrase: "![hZR+nZQFN/lV4XQIlZ1k8g==]"

@@ -52,7 +52,8 @@ output application/java
 			<json-logger:logger doc:name="INFO: File received from SFTP for processing" doc:id="7324a327-aa01-4caf-a54d-5d9ff80854ea" config-ref="JSON_Logger_Config" message="Customer master File received from SFTP for processing">
 				<json-logger:content><![CDATA[#[output application/json ---
 {
-	fileName: vars.flowVars.sftp.fileName
+	fileName: vars.flowVars.sftp.fileName,
+	jsonDataSize: sizeOf(vars.jsonData)
 }]]]></json-logger:content>
 			</json-logger:logger>
 			<json-logger:logger doc:name="DEBUG: Incoming Payload" doc:id="7321f1b0-4047-4942-9810-805a3b5b450d" config-ref="JSON_Logger_Config" message="Incoming Payload" tracePoint="BEFORE_REQUEST" priority="DEBUG">
@@ -72,11 +73,6 @@ output application/java
 		</tracing:with-correlation-id>
 	</flow>
 	<sub-flow name="customer-masterSub_Flow" doc:id="fb272ab1-eb89-461e-8532-88cae00776d6" >
-		<!-- [STUDIO:"DEBUG: Customer Master Entry"]<json-logger:logger doc:name="DEBUG: Customer Master Entry" doc:id="14a9d05b-ce7a-4655-990e-b51aa017539f" message="Customer Master Sub Flow Started" config-ref="JSON_Logger_Config">
-			<json-logger:content ><![CDATA[#[output application/json
-&#45;&#45;-
-payload&#93;&#93;&#93;></json-logger:content>
-		</json-logger:logger> [STUDIO] -->
 		<ee:transform doc:name="Payload, sfDetails" doc:id="dc555569-d613-4214-9f62-6f169fbb2354" >
 			<ee:message >
 				<ee:set-payload resource="dwl/customerMasterMapping.dwl" />
@@ -130,7 +126,7 @@ output application/json
 payload.allFailedJobs map ((item, index) -> {
     FFCCMPN: item.originalFields.Company_Number__c default "",
     FFCCUSN: item.originalFields.Customer_Number__c default "",
-    FFCARCD: item.originalFields.Active__c default "",
+    //FFCARCD: item.originalFields.Active__c default "",
     FFCCNMB: item.originalFields.Name default "",
     FFCCA1B: if (item.originalFields.BillingStreet? and item.originalFields.BillingStreet != "") 
                 (item.originalFields.BillingStreet splitBy " ")[0] default "" 
