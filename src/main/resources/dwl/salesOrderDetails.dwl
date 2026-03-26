@@ -1,17 +1,17 @@
 %dw 2.0
-output application/java
+output application/json
 ---
 payload map ((item, index) ->{
-	Account__c: if(item.HHICUSN?) trim(item.HHICUSN)  default  "" else "KeyToBeRemoved",
-	Sales_Order__c: trim(item.HHIORNR),
+	"Account__r.Customer_Number__c": if(item.HHICUSN?) trim(item.HHICUSN) default "" else "KeyToBeRemoved",
+	"Sales_Order__r.Order_Number__c": if(item.HHIORNR?) trim(item.HHIORNR) default "" else "KeyToBeRemoved",
+	Order_Number_Line_External__c: if(item.HHIORNR? and item.HHILNOI?) trim(item.HHIORNR) ++ "_" ++ trim(item.HHILNOI) default "" else "KeyToBeRemoved",
 	Line_number__c: trim(item.HHILNOI),
-	//            : trim(item.HHIORNR) ++ "_" ++ trim(item.HHILNOI)
 	Memo_billing_code__c: if(item.HHIMEMO?) trim(item.HHIMEMO)  default  "" else "KeyToBeRemoved",
 	Credit_order_Flag__c: if(item.HHICRIN?) trim(item.HHICRIN)  default  "" else "KeyToBeRemoved",
 	Ship_Date__c: if(item.HHIDTES?) (if(!isEmpty(item.HHIDTES)) ((item.HHIDTES[0 to 3]++'-' ++ item.HHIDTES[4 to 5]++'-' ++ item.HHIDTES[6 to 7]) as Date {format: "yyyy-MM-dd"}  default null) else null) else "KeyToBeRemoved",
 	Order_Date__c: if(item.HHIDTET?) (if(!isEmpty(item.HHIDTET)) ((item.HHIDTET[0 to 3]++'-' ++ item.HHIDTET[4 to 5]++'-' ++ item.HHIDTET[6 to 7]) as Date {format: "yyyy-MM-dd"}  default null) else null) else "KeyToBeRemoved",
 	Route_number__c: if(item.HHIRTEN?) trim(item.HHIRTEN)  default  "" else "KeyToBeRemoved",
-	Product__c: if(item.HHIITMN?) trim(item.HHIITMN)  default  "" else "KeyToBeRemoved",
+	"Product__r.Product_Code_External__c": if(item.HHIITMN?) trim(item.HHIITMN)  default  "" else "KeyToBeRemoved",
 	Quantity_ordered__c: if(item.HHIQYOA?) item.HHIQYOA default  null else "KeyToBeRemoved",
 	Quantity_shipped__c: if(item.HHIQYSA?) item.HHIQYSA default  null else "KeyToBeRemoved",
 	Item_price__c: if(item.HHIPRCN?) item.HHIPRCN default  null else "KeyToBeRemoved",

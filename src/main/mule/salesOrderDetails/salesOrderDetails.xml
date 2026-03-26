@@ -1,18 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-	<sub-flow name="salesOrderDetailsSub_Flow" doc:id="30c54fda-b0dc-4285-923a-ed40687cb12e" >
-		<json-logger:logger doc:name="DEBUG: Sales Order details to Entry" doc:id="6e49bb3e-93a3-4216-b418-0faae05a54ec" config-ref="JSON_Logger_Config" message="Sales Order details Sub Flow Started">
-			<json-logger:content><![CDATA[#[output application/json ---
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+	<flow name="salesOrderDetails-Flow" doc:id="023da585-f461-4568-9bb1-388f7be25043" initialState="${flowState.salesOrderLineItems}">
+		<sftp:listener doc:name="On New or Updated File" doc:id="748727bc-6dce-4979-84aa-2ed411d1ecb9" config-ref="SFTP_Config" directory="${sftp.directory.salesOrderLineItems.input}" recursive="false">
+			<scheduling-strategy>
+				<cron expression="${sftp.schedulerExpresssion.salesOrderLineItems}" timeZone="America/New_York" />
+			</scheduling-strategy>
+		</sftp:listener>
+		<set-variable value="#[output application/json&#10;---&#10;payload]" doc:name="jsonData" doc:id="de3859de-09bc-432b-8973-c002a3e51727" variableName="jsonData" />
+		<tracing:with-correlation-id doc:name="With CorrelationID" doc:id="aa5baf83-3f6d-4986-90b7-3f1bbdfb5c23" correlationId="#[vars.flowVars.initialVars.originalCorrelationId default correlationId]">
+			<ee:transform doc:name="vars:flowVars" doc:id="74244c42-7072-4010-8c90-36e477adc06d">
+				<ee:message />
+				<ee:variables>
+					<ee:set-variable variableName="flowVars"><![CDATA[%dw 2.0
+output application/java
+---
 {
-    request: payload
-    
+	"sftp": {
+		"fileName": message.attributes.name default "file-name-not-found",
+		"inputPath": Mule::p('sftp.directory.salesOrderLineItems.input'),
+		"outputPath": Mule::p('sftp.directory.salesOrderLineItems.output'),
+		"failedPath": Mule::p('sftp.directory.salesOrderLineItems.failed')
+	},
+	"logger": {
+		fileName: message.attributes.name default "file-name-not-found"
+	}
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<json-logger:logger doc:name="INFO: File received from SFTP for processing" doc:id="7c06567c-d5df-4f17-9a73-a24c92c5d554" config-ref="JSON_Logger_Config" message="Sales Order Details File received from SFTP for processing">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+	fileName: vars.flowVars.sftp.fileName,
+	jsonDataSize: sizeOf(vars.jsonData)
 }]]]></json-logger:content>
-		</json-logger:logger>
+			</json-logger:logger>
+			<json-logger:logger doc:name="DEBUG: Incoming Payload" doc:id="371ded5f-0a78-4d65-b5f8-c8742b452a52" config-ref="JSON_Logger_Config" message="Incoming Payload" tracePoint="BEFORE_REQUEST" priority="DEBUG">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+    payload: payload.^raw as String,
+    attributes: attributes 
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<flow-ref doc:name="salesOrderSub_Flow" doc:id="472bb5c9-4b17-47c3-844e-9dce7ce3d217" name="salesOrderDetailsSub_Flow" />
+			<json-logger:logger doc:name="INFO: Sales Order Details file processed from SFTP" doc:id="445aac72-33c2-4cc8-989c-a585f5e8e0bd" config-ref="JSON_Logger_Config" message="Sales Order Details file processed from SFTP" tracePoint="END">
+				<json-logger:content><![CDATA[#[output application/json ---
+{
+	fileName: vars.flowVars.sftp.fileName
+}]]]></json-logger:content>
+			</json-logger:logger>
+		</tracing:with-correlation-id>
+	</flow>
+	<sub-flow name="salesOrderDetailsSub_Flow" doc:id="30c54fda-b0dc-4285-923a-ed40687cb12e" >
 		<ee:transform doc:name="Payload, sfDetails" doc:id="a7470f1f-5e1e-49eb-b039-50d01352f960" >
 			<ee:message >
 				<ee:set-payload resource="dwl/salesOrderDetails.dwl" />
@@ -28,15 +73,15 @@ output application/java
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Upsert sales Order details Data" doc:id="3c3f9393-d44f-44ce-9e2a-9b6d10392b07" name="upsert-data-to-salesforce" />
-		<choice doc:name="Choice" doc:id="6a7a4454-00a7-4501-95b4-8b04ff0a5612" >
-			<when expression="#[payload.successful == true]" >
-				<ee:transform doc:name="Transform Message" doc:id="7b9dc60b-f4ac-42fa-a38b-a462d8f4afca" >
+		<choice doc:name="Choice" doc:id="53fd5a98-621a-4e43-b7ad-2d3cdc189cd5" >
+			<when expression="#[payload.totalFailedJobs == 0]" >
+				<flow-ref doc:name="move-files-to-output-path" doc:id="b97048da-3ccc-4c5e-b314-eaf09eee00fb" name="move-files-to-output-path" />
+				<ee:transform doc:name="Transform Message" doc:id="4bdd8121-3ff9-47bd-9a1d-54af916ce34b" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  isSuccess: payload.successful,
   apiName: Mule::p('api.name'),
   apiVersion: Mule::p('api.version'),
   traceId: correlationId,
@@ -46,34 +91,105 @@ output application/json
 } as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
+				<json-logger:logger doc:name="INFO: Sales Order Details file processed successfully" doc:id="47a4c345-f82d-4a28-addb-641b1d1f0203" config-ref="JSON_Logger_Config" message="Sales Order Details file processed successfully" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[output application/json
+---
+payload]]]></json-logger:content>
+				</json-logger:logger>
 			</when>
 			<otherwise >
-				<ee:transform doc:name="Transform Message" doc:id="fe8dd306-5dc0-4ac4-9636-eb535cef65fe" >
+				<json-logger:logger doc:name="ERROR: Upsert in salesforce failed. Moving file to failed folder" doc:id="108ce8d9-bd13-4168-81bd-26fbb9231d44" config-ref="JSON_Logger_Config" message="Upsert in salesforce failed. Moving file to failed folder" tracePoint="FLOW" priority="ERROR" >
+					<json-logger:content ><![CDATA[#[output application/json ---
+{
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<ee:transform doc:name="Reverse Mapping" doc:id="1d773e53-e5ac-4586-8efd-f022231de8e1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.allFailedJobs map ((item, index) -> {
+	HHHCMPN: item.originalFields.Company_Number__c default "",
+	HHHDIVN: item.originalFields.Division_Number__c default "",
+	HHHDPTN: item.originalFields.Department_Number__c default "",
+	HHHCUSN: item.originalFields.Account__c default "",
+	HHHORNR: item.originalFields.Order_Number__c default "",
+	HHHORTY: item.originalFields.Order_Type__c default "",
+	HHHMEMO: item.originalFields.Memo_Billing_Code__c default "",
+	HHHMEM2: item.originalFields.Memo_Billing_Code_2__c default "",
+	HHHWHSN: item.originalFields.Warehouse_Number__c default "",
+	HHHSETN: item.originalFields.Remote_Set_Number__c default "",
+	HHHARCD: item.originalFields.Active_Record_Code__c default "",
+	HHHSLNB: item.originalFields.Salesrep__c default "",
+	HHHDTES: (item.originalFields.Ship_Date__c default "") as String {format: "yyyy-MM-dd"} replace "-" with "",
+	HHHDTET: (item.originalFields.Order_Date__c default "") as String {format: "yyyy-MM-dd"} replace "-" with "",
+	HHHINSI: item.originalFields.Special_Instructions__c default "",
+	HHHINS2: item.originalFields.Special_Instructions_2__c default "",
+	HHHINVR: item.originalFields.Invoice_Reference_Number__c default "",
+	HHHTRMC: item.originalFields.Terms_Code__c default "",
+	HHHUSER: item.originalFields.User_id__c default "",
+	HHHUSR1: item.originalFields.User_id_1__c default "",
+	HHHUSR2: item.originalFields.User_id_2__c default "",
+	HHHTIMO: item.originalFields.Time_of_order__c default "",
+	HHHTIME: item.originalFields.Time__c default "",
+	HHHFSYR: item.originalFields.Fiscal_year__c default "",
+	HHHFSPD: item.originalFields.Fiscal_Period__c default "",
+	HHHWEKC: item.originalFields.Current_week_of_year__c default "",
+	HHHCLYR: item.originalFields.Calendar_Year__c default "",
+	HHHCLWK: item.originalFields.Calendar_week__c default "",
+	HHHINVN: item.originalFields.Invoice_number__c default "",
+	HHHDTEI: (item.originalFields.Date_of_last_order__c default "") as String {format: "yyyy-MM-dd"} replace "-" with "",
+	HHHINAM: item.originalFields.Invoice_Amount__c default "",
+	HHHQYOA: item.originalFields.Quantity_Ordered__c default "",
+	HHHQYSA: item.originalFields.Quantity_Shipped__c default "",
+	HHHEXCB: item.originalFields.Ext_case_cube__c default "",
+	HHHEXSH: item.originalFields.Ext_ship_weight__c default "",
+	HHHEXSG: item.originalFields.Ext_sales_gross__c default "",
+	HHHEXSN: item.originalFields.Ext_sales_net__c default "",
+	HHHEXCG: item.originalFields.Ext_salesrep_cost_gross__c default "",
+	HHHEXCR: item.originalFields.Ext_salesrep_cost_net__c default "",
+	HHHEXAC: item.originalFields.Ext_actual_cost__c default "",
+	HHHEXBS: item.originalFields.Ext_bid_sales_amount__c default "",
+	HHHEXMC: item.originalFields.O_E_ext_mkt_cost__c default "",
+	HHHEXRC: item.originalFields.O_E_ext_slsrep_cost__c default "",
+	HHHCSCD: item.originalFields.Chain_store_code__c default "",
+	errorMessage: item.errorMessage default ""
+})]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[%dw 2.0&#10;output application/java&#10;---&#10;vars.flowVars.sftp.failedPath ++ &quot;/&quot; ++ &quot;sf_error_$(vars.jobId default '').txt&quot;]" doc:name="targetPath" doc:id="f2d6ad2e-6e21-4992-8449-09ebc366b211" variableName="targetPath" />
+				<flow-ref doc:name="write-files-to-sftp" doc:id="ffe09cec-78be-4947-a899-f38620704431" name="write-files-to-sftp" />
+				<flow-ref doc:name="move-files-to-output-path" doc:id="049256af-63a7-4320-bd10-ba67047fb2b5" name="move-files-to-output-path" />
+				<ee:transform doc:name="Map Error Body" doc:id="3aee2523-4b4d-4249-ba47-00fd08484cc3" >
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  isSuccess: payload.successful,
-  apiName: Mule::p('api.name'),
-  apiVersion: Mule::p('api.version'),
-  traceId: correlationId,
-  timestamp: now() as DateTime,
-  message: "Failed",
-  sfResponse: write({
-    "items":
-    payload.items map ((item) -> 
-    item.exception - "stackTrace")
-},"application/json")
-} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+	apiName: Mule::p('api.name'),
+	version: Mule::p('api.version'),
+	timeStamp: now() as DateTime,
+	success: false,
+	errorDetails: [{
+		message: payload.errors[0].message
+	}]
+}]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
+				<json-logger:logger doc:name="INFO: Sales Order Details file processed failed" doc:id="4346fa6f-64de-4565-8df9-ab3ac2af5cee" config-ref="JSON_Logger_Config" message="Sales Order Details file processed failed" tracePoint="END" >
+					<json-logger:content ><![CDATA[#[output application/json
+---
+vars.flowVars.logger ++
+{
+	success: false
+}]]]></json-logger:content>
+				</json-logger:logger>
 			</otherwise>
 		</choice>
-		<json-logger:logger doc:name="DEBUG: Sales Order details to Exit" doc:id="940dc567-62f3-42c6-ace8-01a99e450138" config-ref="JSON_Logger_Config" message="Sales Order details Sub Flow Completed" >
-			<json-logger:content ><![CDATA[#[output application/json ---
+		<json-logger:logger doc:name="DEBUG: Sales Order details to Exit" doc:id="940dc567-62f3-42c6-ace8-01a99e450138" config-ref="JSON_Logger_Config" message="Sales Order details Sub Flow Completed">
+			<json-logger:content><![CDATA[#[output application/json ---
 {
-    request: payload
+    message: "Exit"
     
 }]]]></json-logger:content>
 		</json-logger:logger>

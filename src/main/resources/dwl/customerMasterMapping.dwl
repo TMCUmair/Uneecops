@@ -4,7 +4,7 @@ output application/json
 payload map ((item, index) ->{
     Company_Number__c : if(item.FFCCMPN?) trim(item.FFCCMPN)  default  "" else "KeyToBeRemoved",
     Customer_Number__c : trim(item.FFCCUSN),
-    Active__c:if(item.FFCARCD?) trim(item.FFCARCD)  default  "" else "KeyToBeRemoved",
+    //Active__c:if(item.FFCARCD?) trim(item.FFCARCD)  default  "" else "KeyToBeRemoved",
     Name: if(item.FFCCNMB?) trim(item.FFCCNMB)  default  "" else "KeyToBeRemoved",
     BillingStreet : if(item.FFCCA1B? or item.FFCCA2B?) trim(item.FFCCA1B  default  "" ++ " " ++ item.FFCCA2B  default "") else "KeyToBeRemoved",
     BillingCity : if(item.FFCCTYB?) trim(item.FFCCTYB)  default  "" else "KeyToBeRemoved",

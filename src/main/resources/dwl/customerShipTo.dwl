@@ -33,5 +33,6 @@ payload map ((item, index) ->{
 	Order_Guide_Number__c: if(item.FFDORGN?) trim(item.FFDORGN) default  "" else "KeyToBeRemoved",
 	A_R_Last_Pay_Amount__c: if(item.FFDLSPY?) item.FFDLSPY default  null else "KeyToBeRemoved",
 	Customer_Group_Code__c: if(item.FFDCGRP?) trim(item.FFDCGRP) default  "" else "KeyToBeRemoved",
+	Active__c: if(item.FFDARCD?) trim(item.FFDARCD) default  "" else "KeyToBeRemoved"
 } filterObject ((value, key, index) -> value != "KeyToBeRemoved")
 )

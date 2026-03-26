@@ -1,24 +1,28 @@
 %dw 2.0
-output application/java
+import * from dw::core::Dates
+output application/json
+
+fun formatToISOTime(rawTime: Number): String = 
+  do {
+    var padded = rawTime as String {format: "000000"}
+    var hour = padded[0 to 1]
+    var minute = padded[2 to 3]
+    var second = padded[4 to 5]
+    ---
+    hour ++ ":" ++ minute ++ ":" ++ second ++ ".000Z"
+  }
 ---
 payload map ((item, index) ->{
 	Company_Number__c: if(item.HHHCMPN?) trim(item.HHHCMPN)  default  "" else "KeyToBeRemoved",
 	Division_Number__c: if(item.HHHDIVN?) trim(item.HHHDIVN)  default  "" else "KeyToBeRemoved",
 	Department_Number__c: if(item.HHHDPTN?) trim(item.HHHDPTN)  default  "" else "KeyToBeRemoved",
-	Account__c: if(item.HHHCUSN?) trim(item.HHHCUSN)  default  "" else "KeyToBeRemoved",
+	"Account__r.Customer_Number__c": if(item.HHHCUSN?) trim(item.HHHCUSN) default "" else "KeyToBeRemoved",
 	Order_Number__c: trim(item.HHHORNR),
 	Order_Type__c: if(item.HHHORTY?) trim(item.HHHORTY)  default  "" else "KeyToBeRemoved",
 	Memo_Billing_Code__c: if(item.HHHMEMO?) trim(item.HHHMEMO)  default  "" else "KeyToBeRemoved",
 	Memo_Billing_Code_2__c: if(item.HHHMEM2?) trim(item.HHHMEM2)  default  "" else "KeyToBeRemoved",
 	Warehouse_Number__c: if(item.HHHWHSN?) trim(item.HHHWHSN)  default  "" else "KeyToBeRemoved",
 	Remote_Set_Number__c: if(item.HHHSETN?) trim(item.HHHSETN)  default  "" else "KeyToBeRemoved",
-//						: item.HHHSETN,
-//						: item.HHHCNMB,
-//						: item.HHHCA1B,
-//						: item.HHHCA2B,
-//						: item.HHHCTYB,
-//						: item.HHHSTEB,
-//						: item.HHHZPCB,
 	Active_Record_Code__c: if(item.HHHARCD?) trim(item.HHHARCD)  default  "" else "KeyToBeRemoved",
 	Salesrep__c: if(item.HHHSLNB?) trim(item.HHHSLNB)  default  "" else "KeyToBeRemoved",
 	Ship_Date__c: if(item.HHHDTES?) (if(!isEmpty(item.HHHDTES)) ((item.HHHDTES[0 to 3]++'-' ++ item.HHHDTES[4 to 5]++'-' ++ item.HHHDTES[6 to 7]) as Date {format: "yyyy-MM-dd"}  default null) else null) else "KeyToBeRemoved",
@@ -30,8 +34,8 @@ payload map ((item, index) ->{
 	User_id__c: if(item.HHHUSER?) trim(item.HHHUSER)  default  "" else "KeyToBeRemoved",
 	User_id_1__c: if(item.HHHUSR1?) trim(item.HHHUSR1)  default  "" else "KeyToBeRemoved",
 	User_id_2__c: if(item.HHHUSR2?) trim(item.HHHUSR2)  default  "" else "KeyToBeRemoved",
-	Time_of_order__c: if(item.HHHTIMO?) trim(item.HHHTIMO)  default  "" else "KeyToBeRemoved",
-	Time__c: if(item.HHHTIME?) trim(item.HHHTIME)  default  "" else "KeyToBeRemoved",
+	Time_of_order__c: if(item.HHHTIMO != null and item.HHHTIMO != "") formatToISOTime(item.HHHTIMO)  default  "" else "KeyToBeRemoved",
+	Time__c: if(item.HHHTIME != null and item.HHHTIME != "") formatToISOTime(item.HHHTIME)  default  "" else "KeyToBeRemoved",
 	Fiscal_year__c: if(item.HHHFSYR?) trim(item.HHHFSYR)  default  "" else "KeyToBeRemoved",
 	Fiscal_Period__c: if(item.HHHFSPD?) trim(item.HHHFSPD)  default  "" else "KeyToBeRemoved",
 	Current_week_of_year__c: if(item.HHHWEKC?) trim(item.HHHWEKC)  default  "" else "KeyToBeRemoved",

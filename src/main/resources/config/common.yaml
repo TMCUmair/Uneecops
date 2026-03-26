@@ -24,7 +24,7 @@ sfdc:
     externalId: "Order_Number__c"  
   salesOrderDetails:
     object: "Sales_Order_Line__c"
-    externalId: "Line_number__c"  
+    externalId: "Order_Number_Line_External__c"  
     
 sftp:
   directory:
@@ -36,23 +36,32 @@ sftp:
         input: "In/Customer Ship To"
         failed: "Errors/Customer Ship To"
         output: "Out/Customer Ship To"
-      product:
+      itemMaster:
         input: "In/Item Master"
         failed: "Errors/Item Master"
-        output: "Out/Item Mastero"
+        output: "Out/Item Master"
+      salesOrderHeader:
+        input: "In/Sales Order Header"
+        failed: "Errors/Sales Order Header"
+        output: "Out/Sales Order Header"
+      salesOrderLineItems:
+        input: "In/Sales Order Line Items"
+        failed: "Errors/Sales Order Line Items"
+        output: "Out/Sales Order Line Items"
   schedulerExpresssion:
       customermaster: "0 0 8,12,16,20 ? * *"
       customershipto: "0 10 8,12,16,20 ? * *"
-      product: "0 30 8,12,16,20 ? * *"
+      itemMaster: "0 20 8,12,16,20 ? * *"
+      salesOrderHeader: "0 30 8,12,16,20 ? * *"
+      salesOrderLineItems: "0 40 8,12,16,20 ? * *"
 
 flowState:
-  customerMaster: "started"
-  customerShipTo: "started"
+  customerMaster: "stopped"
+  customerShipTo: "stopped"
   product: "stopped"
-  main:
-    customerMaster: "stopped"
-    customerShipTo: "stopped"
-    
+  salesOrderHeader: "stopped"
+  salesOrderLineItems: "stopped"
+  
 log:
   category:
     conversion: "log.conversion"
